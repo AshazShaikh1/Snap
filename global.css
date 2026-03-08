@@ -1,4 +1,7 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 @theme {
     --color-background: #000000;
     --color-foreground: #ffffff;
@@ -10,6 +13,10 @@
     --font-sans: "Inter", sans-serif;
     --font-display: "Oswald", "Impact", sans-serif;
 }
+
 @layer base {
-    body { background-color: var(--color-background); color: var(--color-foreground); }
+    body {
+        background-color: var(--color-background);
+        color: var(--color-foreground);
+    }
 }

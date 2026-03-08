@@ -1,12 +1,12 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { DeviceEventEmitter, Text, TouchableOpacity, View } from 'react-native';
+import { DeviceEventEmitter, SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
 // @ts-ignore
 import { supabase } from '../utils/supabase';
 
 export default function HomeScreen() {
     const router = useRouter();
-    const [streak, setStreak] = useState<number | null>(null);
+    const [streak, setStreak] = useState<number>(0);
 
     useEffect(() => {
         fetchStreak();
@@ -14,10 +14,7 @@ export default function HomeScreen() {
 
     async function fetchStreak() {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-            router.replace('/');
-            return;
-        }
+        if (!user) return; // Silent return for bypass purposes
 
         const { data, error } = await supabase
             .from('profiles')
@@ -25,10 +22,7 @@ export default function HomeScreen() {
             .eq('id', user.id)
             .single();
 
-        if (error || !data?.last_relapse_date) {
-            setStreak(0);
-            // Wait, let's create a stub profile if missing, actually just set 0 for MVP
-        } else {
+        if (!error && data?.last_relapse_date) {
             const lastRelapse = new Date(data.last_relapse_date).getTime();
             const now = Date.now();
             const days = Math.floor((now - lastRelapse) / (1000 * 60 * 60 * 24));
@@ -45,33 +39,70 @@ export default function HomeScreen() {
         DeviceEventEmitter.emit('onBlockTriggered');
     }
 
-    return (
-        <View className="bg-black flex-1 items-center justify-center p-6">
-            <Text className="text-white font-display text-xl mb-4 text-center">
-                SNAP // DASHBOARD
-            </Text>
+    function handleGetPro() {
+        router.push('/paywall');
+    }
 
-            <View className="items-center mb-12">
-                <Text className="text-zinc-500 font-sans mb-2">CURRENT STREAK</Text>
-                <Text className="text-white font-display text-8xl">
-                    {streak !== null ? streak : '--'}
-                </Text>
-                <Text className="text-zinc-500 font-sans mt-2">DAYS</Text>
+    return (
+        <SafeAreaView className="flex-1 bg-black">
+            {/* Header */}
+            <View className="flex-row items-center justify-between px-6 py-6 border-b border-zinc-900">
+                <View className="flex-row items-center">
+                    <View className="w-5 h-5 bg-[#007AFF] rounded-sm mr-3" />
+                    <Text className="text-white font-black text-xl tracking-wider">SNAP</Text>
+                </View>
+                <View className="px-3 py-1.5 rounded-full border border-green-800 bg-green-950/30">
+                    <Text className="text-green-500 text-[10px] font-bold tracking-widest uppercase">
+                        Shield Active
+                    </Text>
+                </View>
             </View>
 
-            <TouchableOpacity
-                className="w-full bg-red-600 p-6 mb-8 items-center border-4 border-red-900"
-                onPress={handleManualPanic}
-            >
-                <Text className="text-white font-bold text-xl">MANUAL PANIC TEST</Text>
-            </TouchableOpacity>
+            {/* Main Content Area */}
+            <View className="flex-1 items-center justify-center pb-20">
+                <Text className="text-zinc-500 font-bold tracking-widest text-sm mb-4">
+                    CURRENT STREAK
+                </Text>
 
-            <TouchableOpacity
-                className="w-full bg-transparent border border-zinc-700 p-4 items-center absolute bottom-10"
-                onPress={handleSignOut}
-            >
-                <Text className="text-zinc-500 font-bold">SIGN OUT</Text>
-            </TouchableOpacity>
-        </View>
+                <Text className="text-white font-bold text-[120px] leading-none mb-4 tracking-tighter">
+                    {streak}
+                </Text>
+
+                <Text className="text-zinc-500 font-medium tracking-widest text-lg uppercase mb-20">
+                    Days
+                </Text>
+
+                {/* Panic Button */}
+                <TouchableOpacity
+                    onPress={handleManualPanic}
+                    className="w-48 h-48 rounded-full bg-[#E53935] border-[12px] border-[#8e1d1b] items-center justify-center active:scale-95 shadow-2xl shadow-red-900"
+                    style={{ elevation: 15 }}
+                >
+                    <Text className="text-white font-black text-3xl tracking-wide mb-1">
+                        PANIC
+                    </Text>
+                    <Text className="text-white/80 font-bold text-xs">
+                        MANUAL TRIGGER
+                    </Text>
+                </TouchableOpacity>
+            </View>
+
+            {/* Footer */}
+            <View className="flex-row px-4 pb-8 space-x-4">
+                <TouchableOpacity
+                    onPress={handleGetPro}
+                    className="flex-1 h-14 border border-zinc-700 rounded-lg items-center justify-center active:scale-95"
+                >
+                    <Text className="text-white font-bold text-xs tracking-wider">GET PRO</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    onPress={handleSignOut}
+                    className="flex-1 h-14 bg-[#1C1C1E] rounded-lg items-center justify-center active:scale-95"
+                >
+                    <Text className="text-zinc-400 font-bold text-xs tracking-wider">SIGN OUT</Text>
+                </TouchableOpacity>
+            </View>
+        </SafeAreaView>
     );
 }
